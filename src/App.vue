@@ -1,21 +1,13 @@
 <template>
     <div>
         <div>
-            <input type="text" v-model="state.taskName"/>
+            <input type="text" v-model="taskNameRef" />
             <button @click="addTask">Add</button>
         </div>
         <div>
-            <input type="text" v-model="state.searchText"/>Search
+            <input type="text" v-model="searchTextRef" />Search
         </div>
         <div class="task-list-wrapper">
-            <ul>
-                <h4>all</h4>
-                <li v-for="(task, index) in searchedTasks" :key="index">
-                    <input type="checkbox" :checked="task.status" disabled/>
-                    <label>{{ task.name }}</label>
-                    <button @click="toggleTask(task, true)">toggle</button>
-                </li>
-            </ul>
             <ul>
                 <h4>DOING</h4>
                 <li v-for="(task, index) in doingTasks" :key="index">
@@ -35,63 +27,194 @@
         </div>
     </div>
 </template>
-
 <script lang="ts">
-    import {reactive, computed, defineComponent, toRefs} from 'vue';
-
-    interface MyTodo {
-        taskName: string,
-        searchText: string,
-        tasks: Task[]
-    }
+    import { computed, watch, ref, isRef, Ref } from 'vue';
 
     interface Task {
         name: string,
         status: boolean
     }
 
-    export default defineComponent({
-        setup() {
+    const useTaskList = () => {
+        const tasksRef = ref<Task[]>([] as Task[]);
 
-            const state = reactive<MyTodo>({
-                taskName: "",
-                searchText: "",
-                tasks: [] as Task[],
+        const toggleTask = (task: Task, status: boolean) => {
+            const index = tasksRef.value.indexOf(task);
+            tasksRef.value.splice(index, 1, { ...task, status: status });
+        };
+
+        return {
+            tasksRef,
+            toggleTask,
+        };
+    };
+
+    const useAddingTask = (tasksRef: Ref<Task[]>) => {
+        const taskNameRef = ref<string>('');
+
+        const addTask = () => {
+            tasksRef.value.push({
+                name: taskNameRef.value,
+                status: false,
             });
+            taskNameRef.value = '';
+        }
 
-            const searchedTasks = computed((): Task[]=> state.tasks.filter(t => t.name.includes(state.searchText)))
-            const doingTasks = computed((): Task[] =>  searchedTasks.value.filter(t => !t.status))
-            const completedTasks = computed((): Task[] =>  searchedTasks.value.filter(t => t.status))
+        return {
+            taskNameRef,
+            addTask,
+        };
+    };
 
-            const addTask = () => {
-                state.tasks.push({
-                    name: state.taskName,
-                    status: false,
-                });
-                state.taskName = '';
-            }
+    const useFilter = (tasks: Ref<Task[]>) => {
+        const tasksRef: Ref<Task[]> = ref(tasks);
 
-            const toggleTask = (task: Task, status: boolean) => {
-                const index = state.tasks.indexOf(task);
-                state.tasks.splice(index, 1, {...task, status: status});
-            }
+        const doingTasks = computed(():Task[] => tasksRef.value.filter(t => !t.status))
+        const completedTasks = computed((): Task[] => tasksRef.value.filter(t => t.status))
+
+        return {
+            doingTasks,
+            completedTasks,
+        };
+    };
+
+    const useSearcher = (tasks: Task[] = []) => {
+        const searchTextRef = ref<string>('');
+        const tasksRef = ref<Task[]>(tasks);
+
+        const search = computed((): Task[] => tasksRef.value.filter(t => t.name.includes(searchTextRef.value)))
+
+        return {
+            searchTextRef,
+            search,
+        };
+    };
+
+    export default {
+        setup() {
+            const { tasksRef, toggleTask } = useTaskList();
+            const { taskNameRef, addTask } = useAddingTask(tasksRef);
+            const { searchTextRef, search } = useSearcher(tasksRef.value);
+            const { doingTasks, completedTasks } = useFilter(search);
+
+            watch([doingTasks, completedTasks], () => {
+                console.log('doingTasks: ', doingTasks.value);
+                console.log('completedTasks: ', completedTasks.value);
+            })
 
             return {
-                //data
-                state,
-
-                //computed
-                searchedTasks,
+                // Mutable state
+                tasksRef,
+                taskNameRef,
+                searchTextRef,
+                // Functions
+                addTask,
+                toggleTask,
+                // Computed
                 doingTasks,
                 completedTasks,
-
-                //function
-                addTask,
-                toggleTask
             }
         }
-    })
+    }
 </script>
+
+<!--<script lang="ts">-->
+<!--    import {reactive, computed, defineComponent, toRefs, ref, isRef, watch, Ref} from 'vue';-->
+
+<!--    interface MyTodo {-->
+<!--        taskName: string,-->
+<!--        searchText: string,-->
+<!--        tasks: Task[]-->
+<!--    }-->
+
+<!--    interface Task {-->
+<!--        name: string,-->
+<!--        status: boolean-->
+<!--    }-->
+
+<!--    const useTaskList = () => {-->
+<!--        const tasksRef = ref<Task[]>([]);-->
+
+<!--        const toggleTask = (task: Task, status: boolean) => {-->
+<!--            tasksRef.value.splice(tasksRef.value.indexOf(task), 1, { ...task, status: status });-->
+<!--        };-->
+
+<!--        return {-->
+<!--            tasksRef,-->
+<!--            toggleTask,-->
+<!--        };-->
+<!--    }-->
+
+<!--    const useAddingTask = (tasksRef: Ref<Task[]>) => {-->
+<!--        const taskNameRef = ref<string>('');-->
+
+<!--        const addTask = () => {-->
+<!--            tasksRef.value.push({-->
+<!--                name: taskNameRef.value,-->
+<!--                status: false,-->
+<!--            });-->
+<!--            taskNameRef.value = '';-->
+<!--        }-->
+
+<!--        return {-->
+<!--            taskNameRef,-->
+<!--            addTask,-->
+<!--        };-->
+<!--    };-->
+
+<!--    const useFilter = (tasks: Task[]) => {-->
+<!--        const doingTasks = computed(() => tasks.filter(t => !t.status))-->
+<!--        const completedTasks = computed(() => tasks.filter(t => t.status))-->
+
+<!--        return {-->
+<!--            doingTasks,-->
+<!--            completedTasks,-->
+<!--        };-->
+<!--    };-->
+
+<!--    const useSearcher = (tasks: Task[]) => {-->
+<!--        const searchTextRef = ref<string>('');-->
+<!--        const tasksRefs = ref(tasks);-->
+
+<!--        const search = computed((): Task[] => {-->
+<!--            console.log(tasksRefs)-->
+<!--            return tasksRefs.value.filter(t => t.name.includes(searchTextRef.value))-->
+<!--        })-->
+
+<!--        return {-->
+<!--            searchTextRef,-->
+<!--            search,-->
+<!--        };-->
+<!--    };-->
+
+<!--    export default defineComponent({-->
+<!--        setup() {-->
+
+<!--            const { tasksRef, toggleTask } = useTaskList();-->
+<!--            const { taskNameRef, addTask } = useAddingTask(tasksRef);-->
+<!--            const { searchTextRef, search } = useSearcher(tasksRef.value);-->
+<!--            const { doingTasks, completedTasks } = useFilter(search.value);-->
+
+<!--            watch([doingTasks, completedTasks, tasksRef], () => {-->
+<!--                console.log('doingTasks: ', doingTasks.value);-->
+<!--                console.log('completedTasks: ', completedTasks.value)-->
+<!--            })-->
+
+<!--            return {-->
+<!--                // Mutable state-->
+<!--                tasksRef,-->
+<!--                taskNameRef,-->
+<!--                searchTextRef,-->
+<!--                // Functions-->
+<!--                addTask,-->
+<!--                toggleTask,-->
+<!--                // Computed-->
+<!--                doingTasks,-->
+<!--                completedTasks,-->
+<!--            }-->
+<!--        }-->
+<!--    })-->
+<!--</script>-->
 <style scoped>
     .task-list-wrapper {
         display: flex;
