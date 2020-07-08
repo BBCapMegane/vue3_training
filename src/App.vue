@@ -7,6 +7,7 @@
         <div>
             <input type="text" v-model="searchTextRef" />Search
         </div>
+        <parent-component/>
         <div class="task-list-wrapper">
             <ul>
                 <h4>DOING</h4>
@@ -29,6 +30,7 @@
 </template>
 <script lang="ts">
     import { watch, ref } from 'vue';
+    import parentComponent from "./components/parentComponent.vue"
     import AddTask from "./modules/addTask"
     import FilterTask from "./modules/filterTask";
     import SearchTask from "./modules/searchTask";
@@ -36,8 +38,10 @@
 
 
     export default {
+        components: {
+            parentComponent
+        },
         setup() {
-
             const taskNameRef = ref<string>('');
             const { tasksRef, toggleTask } = TaskList();
             const { addTask } = AddTask(tasksRef);
@@ -57,7 +61,7 @@
                 // Functions
                 addTask,
                 toggleTask,
-                
+
                 // Computed
                 doingTasks,
                 completedTasks,
