@@ -7,14 +7,14 @@
         <div>
             <input type="text" v-model="searchTextRef" />Search
         </div>
-        <parent-component/>
+<!--        <parent-component/>-->
         <div class="task-list-wrapper">
             <ul>
                 <h4>DOING</h4>
                 <li v-for="(task, index) in doingTasks" :key="index">
                     <input type="checkbox" :checked="task.status" disabled/>
                     <label>{{ task.name }}</label>
-                    <button @click="toggleTask(task, true)">toggle</button>
+                    <button @click="toggleTask(task, true)">done</button>
                 </li>
             </ul>
             <ul>
@@ -22,7 +22,7 @@
                 <li v-for="(task, index) in completedTasks" :key="index">
                     <input type="checkbox" :checked="task.status" disabled/>
                     <label>{{ task.name }}</label>
-                    <button @click="toggleTask(task, false)">toggle</button>
+                    <button @click="toggleTask(task, false)">revert</button>
                 </li>
             </ul>
         </div>
