@@ -7,7 +7,7 @@ yarn install
 ### Usage
 ##### Develop
 ```sh
-# run dev server at localhost:8080
+# run dev server at localhost:3000
 yarn dev
 ```
 ##### Build
